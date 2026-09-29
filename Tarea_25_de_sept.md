@@ -347,3 +347,94 @@ Se separan los contratos de lectura y escritura. `Editor` recibe exclusivamente 
 -- Firmado por el sistema
 -- Firmado por el sistema
 ```
+---
+
+## Ejercicio I — Interface Segregation Principle (ISP)
+
+### Problema identificado
+
+La interfaz `Dispositivo` es demasiado grande. Una impresora básica está obligada a implementar escaneo, fax y fotocopia, aunque no puede realizar esas operaciones. Los métodos vacíos ocultan el error al cliente.
+
+### Preguntas guía
+
+#### Si alguien llama `impresoraBasica.escanear("contrato")`, ¿qué pasa?
+
+En el código original el método no hace nada y tampoco informa que la operación no está disponible. El cliente puede creer que el documento fue escaneado, aunque realmente no ocurrió nada.
+
+#### Si se agrega `enviarPorCorreo` a la interfaz, ¿cuántas clases hay que modificar?
+
+En el diseño original habría que modificar todas las clases que implementan `Dispositivo`, incluso las que no tienen esa capacidad. Esto demuestra que la interfaz es demasiado amplia.
+
+### Código corregido
+
+```java
+interface Impresora {
+    void imprimir(String documento);
+}
+
+interface Escaner {
+    void escanear(String documento);
+}
+
+interface Fax {
+    void enviarFax(String documento);
+}
+
+interface Fotocopiadora {
+    void fotocopiar(String documento);
+}
+
+class ImpresoraMultifuncional
+        implements Impresora, Escaner, Fax, Fotocopiadora {
+
+    public void imprimir(String documento) {
+        System.out.println("Imprimiendo " + documento);
+    }
+
+    public void escanear(String documento) {
+        System.out.println("Escaneando " + documento);
+    }
+
+    public void enviarFax(String documento) {
+        System.out.println("Enviando fax " + documento);
+    }
+
+    public void fotocopiar(String documento) {
+        System.out.println("Fotocopiando " + documento);
+    }
+}
+
+class ImpresoraBasica implements Impresora {
+    public void imprimir(String documento) {
+        System.out.println("Imprimiendo " + documento);
+    }
+}
+
+// Reto extra: dispositivo que solo escanea.
+class EscanerSimple implements Escaner {
+    public void escanear(String documento) {
+        System.out.println("Escaneando " + documento);
+    }
+}
+
+public class DemoISP {
+    public static void main(String[] args) {
+        Impresora impresora = new ImpresoraBasica();
+        Escaner escaner = new EscanerSimple();
+
+        impresora.imprimir("contrato.pdf");
+        escaner.escanear("contrato.pdf");
+    }
+}
+```
+
+### Justificación
+
+Las capacidades se dividen en interfaces pequeñas. Cada clase implementa solamente las operaciones que puede ofrecer, evitando métodos vacíos y haciendo que el contrato sea claro para el cliente.
+
+### Evidencia
+
+```text
+Imprimiendo contrato.pdf
+Escaneando contrato.pdf
+```
