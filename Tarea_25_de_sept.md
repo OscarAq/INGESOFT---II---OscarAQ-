@@ -442,8 +442,6 @@ Escaneando contrato.pdf
 
 ## Ejercicio D — Dependency Inversion Principle (DIP)
 
-> Los módulos de alto nivel no deben depender de módulos de bajo nivel; ambos deben depender de abstracciones.
-
 ### Problema identificado
 
 `ServicioUsuarios` crea directamente un objeto `MySQLDatabase`. La lógica de negocio queda acoplada a una tecnología específica, lo que dificulta migrar a MongoDB y probar el servicio sin una base de datos real.
@@ -531,13 +529,5 @@ El servicio depende de la abstracción `BaseDatos`, no de MySQL. Esto permite ca
 ---
 
 ## Conclusión
-
-Las preguntas guía muestran el efecto práctico de cada principio:
-
-- **SRP:** una clase con varias responsabilidades cambia por muchos motivos.
-- **OCP:** una cadena de condiciones obliga a modificar código existente para extenderlo.
-- **LSP:** una subclase que no cumple el contrato de su padre rompe a los clientes.
-- **ISP:** una interfaz grande obliga a implementar operaciones que no corresponden.
-- **DIP:** una clase de negocio acoplada a MySQL es difícil de cambiar y probar.
 
 Las correcciones no consisten únicamente en cambiar nombres: modifican los contratos y las dependencias para que el diseño sea más mantenible, extensible y comprobable
