@@ -146,7 +146,6 @@ Enviando boletín por correo al acudiente de Ana
 
 ## Ejercicio O — Open/Closed Principle (OCP)
 
-Las entidades de software deben estar abiertas para extensión, pero cerradas para modificación.
 
 ### Problema identificado
 
@@ -251,4 +250,100 @@ Cada tipo de envío se representa mediante una manera independiente. Agregar una
 6000.0
 25000.0
 44000.0
+```
+---
+
+## Ejercicio L — Liskov Substitution Principle (LSP)
+
+
+### Problema identificado
+
+`ArchivoSoloLectura` hereda de `Archivo`, pero no puede cumplir correctamente el método `escribir`: lanza una excepción. Por eso, un objeto que parece ser un `Archivo` no puede utilizarse en todos los lugares donde se espera un archivo escribible.
+
+### Preguntas guía
+
+#### ¿Qué pasa al ejecutar `agregarFirma` con un `Archivo` y un `ArchivoSoloLectura`?
+
+El método funciona con el primer archivo escribible, pero cuando llega al archivo de solo lectura lanza `UnsupportedOperationException`. La operación se interrumpe y el programa falla.
+
+#### ¿Por qué agregar `if (!(a instanceof ArchivoSoloLectura))` es un parche?
+
+Porque el cliente debe conocer una clase concreta y preguntar qué tipo de objeto recibió. Eso aumenta el acoplamiento y no corrige el contrato incorrecto. Además, habría que agregar más condiciones cada vez que aparezca otro tipo de archivo no escribible.
+
+#### ¿Un archivo de solo lectura realmente “es un” archivo que se puede escribir?
+
+No. Es un archivo que se puede leer, pero no cumple el contrato de escritura. Por eso no debe heredar de una abstracción que obligue a escribir.
+
+### Código corregido
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+interface Archivo {
+    String leer();
+}
+
+interface ArchivoEscribible extends Archivo {
+    void escribir(String texto);
+}
+
+class ArchivoNormal implements ArchivoEscribible {
+    private String contenido = "";
+
+    public String leer() {
+        return contenido;
+    }
+
+    public void escribir(String texto) {
+        contenido += texto;
+    }
+}
+
+class ArchivoSoloLectura implements Archivo {
+    private final String contenido;
+
+    public ArchivoSoloLectura(String contenido) {
+        this.contenido = contenido;
+    }
+
+    public String leer() {
+        return contenido;
+    }
+}
+
+class Editor {
+    public void agregarFirma(List<ArchivoEscribible> archivos) {
+        for (ArchivoEscribible archivo : archivos) {
+            archivo.escribir("\n-- Firmado por el sistema");
+        }
+    }
+}
+
+public class DemoLSP {
+    public static void main(String[] args) {
+        ArchivoNormal archivo1 = new ArchivoNormal();
+        ArchivoNormal archivo2 = new ArchivoNormal();
+
+        List<ArchivoEscribible> archivos = new ArrayList<>();
+        archivos.add(archivo1);
+        archivos.add(archivo2);
+
+        new Editor().agregarFirma(archivos);
+
+        System.out.println(archivo1.leer());
+        System.out.println(archivo2.leer());
+    }
+}
+```
+
+### Justificación
+
+Se separan los contratos de lectura y escritura. `Editor` recibe exclusivamente archivos que garantizan la operación `escribir`, mientras que `ArchivoSoloLectura` solo implementa el contrato que realmente puede cumplir.
+
+### Evidencia
+
+```text
+-- Firmado por el sistema
+-- Firmado por el sistema
 ```
