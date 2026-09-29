@@ -10,7 +10,7 @@ En cada ejercicio se identifica el problema, se muestra el código original del 
 
 ## Ejercicio S — Single Responsibility Principle (SRP)
 
-## Preguntas Guias
+### Preguntas Guías
 #### ¿Qué hace esta clase en una sola frase?
 
 La clase representa un estudiante, calcula sus notas, guarda sus datos, imprime su boletín y envía información al acudiente.
