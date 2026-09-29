@@ -438,3 +438,106 @@ Las capacidades se dividen en interfaces pequeñas. Cada clase implementa solame
 Imprimiendo contrato.pdf
 Escaneando contrato.pdf
 ```
+---
+
+## Ejercicio D — Dependency Inversion Principle (DIP)
+
+> Los módulos de alto nivel no deben depender de módulos de bajo nivel; ambos deben depender de abstracciones.
+
+### Problema identificado
+
+`ServicioUsuarios` crea directamente un objeto `MySQLDatabase`. La lógica de negocio queda acoplada a una tecnología específica, lo que dificulta migrar a MongoDB y probar el servicio sin una base de datos real.
+
+### Preguntas guía
+
+#### La empresa decide migrar a MongoDB. ¿Qué tienen que modificar en `ServicioUsuarios`?
+
+En el código original hay que modificar `ServicioUsuarios`, porque contiene directamente la creación y el tipo `MySQLDatabase`. En la solución corregida solo se crea una implementación diferente de `BaseDatos` y se inyecta desde afuera.
+
+#### ¿Cómo harían una prueba de `registrar` sin conectarse a una base de datos real?
+
+Se utiliza `BaseDatosEnMemoria`, una implementación de `BaseDatos` que almacena los datos en una lista. Así se puede verificar el resultado sin infraestructura externa.
+
+#### ¿Quién decide qué base de datos se usa: `ServicioUsuarios` o alguien de afuera?
+
+Debe decidirlo el código externo, por ejemplo `main`, una fábrica o un contenedor de dependencias. `ServicioUsuarios` solo conoce la abstracción `BaseDatos`.
+
+### Código corregido
+
+```java
+import java.util.ArrayList;
+import java.util.List;
+
+interface BaseDatos {
+    void guardar(String dato);
+}
+
+class MySQLDatabase implements BaseDatos {
+    public void guardar(String dato) {
+        System.out.println("[MySQL] Guardando: " + dato);
+    }
+}
+
+class BaseDatosEnMemoria implements BaseDatos {
+    private final List<String> datos = new ArrayList<>();
+
+    public void guardar(String dato) {
+        datos.add(dato);
+    }
+
+    public List<String> getDatos() {
+        return new ArrayList<>(datos);
+    }
+}
+
+class ServicioUsuarios {
+    private final BaseDatos db;
+
+    public ServicioUsuarios(BaseDatos db) {
+        this.db = db;
+    }
+
+    public void registrar(String nombreUsuario) {
+        if (nombreUsuario == null || nombreUsuario.isBlank()) {
+            throw new IllegalArgumentException("Nombre inválido");
+        }
+        db.guardar(nombreUsuario);
+    }
+}
+
+public class DemoDIP {
+    public static void main(String[] args) {
+        BaseDatosEnMemoria baseDatos = new BaseDatosEnMemoria();
+        ServicioUsuarios servicio = new ServicioUsuarios(baseDatos);
+
+        servicio.registrar("ana");
+        servicio.registrar("lucia");
+
+        System.out.println(baseDatos.getDatos());
+    }
+}
+```
+
+### Justificación
+
+El servicio depende de la abstracción `BaseDatos`, no de MySQL. Esto permite cambiar la infraestructura o usar una implementación en memoria sin modificar la lógica de negocio.
+
+### Evidencia
+
+```text
+[ana, lucia]
+```
+
+---
+
+## Conclusión
+
+Las preguntas guía muestran el efecto práctico de cada principio:
+
+- **SRP:** una clase con varias responsabilidades cambia por muchos motivos.
+- **OCP:** una cadena de condiciones obliga a modificar código existente para extenderlo.
+- **LSP:** una subclase que no cumple el contrato de su padre rompe a los clientes.
+- **ISP:** una interfaz grande obliga a implementar operaciones que no corresponden.
+- **DIP:** una clase de negocio acoplada a MySQL es difícil de cambiar y probar.
+
+Las correcciones no consisten únicamente en cambiar nombres: modifican los contratos y las dependencias para que el diseño sea más mantenible, extensible y comprobable
