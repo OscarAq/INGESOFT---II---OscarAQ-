@@ -142,3 +142,113 @@ Promedio: 4.5
 Guardando Ana en estudiantes.txt...
 Enviando boletín por correo al acudiente de Ana
 ```
+---
+
+## Ejercicio O — Open/Closed Principle (OCP)
+
+Las entidades de software deben estar abiertas para extensión, pero cerradas para modificación.
+
+### Problema identificado
+
+`CalculadoraEnvio` contiene una cadena de condiciones `if/else`. Cada nuevo tipo de envío obliga a modificar la clase. Si existen muchos tipos, la clase se vuelve larga, difícil de probar y propega errores.
+
+### Preguntas guía
+
+#### La empresa quiere agregar el envío `MISMO_DIA`. ¿que modifico?
+
+En el código original deben modificar `CalculadoraEnvio` y agregar otro bloque `else if`. Esto no va con OCP porque una nueva funcionalidad requiere modificar código existente.
+
+En la solución corregida se crea una nueva clase `EnvioMismoDia` y se registra mediante `registrar`, sin modificar la lógica de cálculo de `CalculadoraEnvio`.
+
+#### ¿Qué pasa con esta clase si en un año hay 15 tipos de envío?
+
+La cadena de condiciones crecería demasiado. La clase tendría muchas responsabilidades, sería difícil de leer y cualquier modificación podría afectar los tipos existentes.
+
+### Código corregido
+
+```java
+import java.util.HashMap;
+import java.util.Map;
+
+interface EstrategiaEnvio {
+    double calcular(double peso);
+}
+
+class EnvioNormal implements EstrategiaEnvio {
+    public double calcular(double peso) {
+        return peso * 2000;
+    }
+}
+
+class EnvioExpress implements EstrategiaEnvio {
+    public double calcular(double peso) {
+        return peso * 5000 + 10000;
+    }
+}
+
+class EnvioInternacional implements EstrategiaEnvio {
+    public double calcular(double peso) {
+        return peso * 15000 + 50000;
+    }
+}
+
+// Nueva extensión: no es necesario modificar CalculadoraEnvio.
+class EnvioMismoDia implements EstrategiaEnvio {
+    public double calcular(double peso) {
+        return peso * 8000 + 20000;
+    }
+}
+
+class CalculadoraEnvio {
+    private final Map<String, EstrategiaEnvio> estrategias = new HashMap<>();
+
+    public CalculadoraEnvio() {
+        estrategias.put("NORMAL", new EnvioNormal());
+        estrategias.put("EXPRESS", new EnvioExpress());
+        estrategias.put("INTERNACIONAL", new EnvioInternacional());
+    }
+
+    public void registrar(String tipo, EstrategiaEnvio estrategia) {
+        estrategias.put(tipo, estrategia);
+    }
+
+    public double calcular(String tipo, double peso) {
+        EstrategiaEnvio estrategia = estrategias.get(tipo);
+        if (estrategia == null) {
+            throw new IllegalArgumentException("Tipo de envío no soportado");
+        }
+        return estrategia.calcular(peso);
+    }
+}
+
+public class DemoOCP {
+    public static void main(String[] args) {
+        CalculadoraEnvio calculadora = new CalculadoraEnvio();
+        calculadora.registrar("MISMO_DIA", new EnvioMismoDia());
+
+        System.out.println(calculadora.calcular("NORMAL", 3));
+        System.out.println(calculadora.calcular("EXPRESS", 3));
+        System.out.println(calculadora.calcular("MISMO_DIA", 3));
+    }
+}
+```
+
+### Reto extra
+
+Para un peso de `3`, el envío `MISMO_DIA` cuesta:
+
+```text
+3 * 8000 + 20000 = 44000
+```
+
+### Justificación
+
+Cada tipo de envío se representa mediante una manera independiente. Agregar una modalidad nueva lleva en crear otra implementación y registrarla, sin modificar la clase que coordina los cálculos.
+
+### Evidencia
+
+```text
+6000.0
+25000.0
+44000.0
+```
